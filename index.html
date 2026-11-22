@@ -170,6 +170,10 @@ section{position:relative}
 .form__error{font-family:var(--accent);font-weight:600;font-size:15px;line-height:1.4;color:#c4124f;background:var(--pink-soft);border-radius:16px;padding:12px 16px}
 .form__error[hidden]{display:none}
 .btn:disabled{opacity:.6;cursor:progress}
+.reply__title{font-family:var(--display);text-transform:uppercase;font-size:clamp(22px,2.4vw,30px);line-height:1.1;color:var(--blue)}
+.reply__text{font-family:var(--accent);font-weight:600;font-size:18px;line-height:1.4}
+.reply__alt{font-family:var(--accent);font-weight:600;font-size:16px;color:#5a6072;text-align:center}
+.reply__alt a{color:var(--blue);text-decoration:none;white-space:nowrap}
 .form__done{display:none;text-align:center;padding:24px 8px}
 .form__done h3{font-family:var(--display);text-transform:uppercase;font-size:clamp(22px,2.4vw,30px);line-height:1.1;color:var(--blue)}
 .form__done p{margin-top:14px;font-family:var(--accent);font-weight:600}
@@ -376,31 +380,12 @@ section{position:relative}
       <svg class="rsvp__arrow" viewBox="0 0 100 100" aria-hidden="true"><use href="#arrow-big"/></svg>
     </div>
 
-    <form class="form reveal" id="rsvp-form" novalidate>
-      <div class="field">
-        <label for="f-name">Имя и&nbsp;фамилия</label>
-        <input id="f-name" name="name" type="text" autocomplete="name" required>
-      </div>
-      <div class="field">
-        <label for="f-company">Компания</label>
-        <input id="f-company" name="company" type="text" autocomplete="organization">
-      </div>
-      <div class="field">
-        <label for="f-contact">Телефон или&nbsp;Telegram</label>
-        <input id="f-contact" name="contact" type="text" required>
-      </div>
-      <label class="consent">
-        <input type="checkbox" name="consent" required>
-        <span>Даю согласие на&nbsp;обработку персональных данных и&nbsp;подтверждаю ознакомление с&nbsp;<a href="https://creon-cg.com/static/policy-privacy-COsMta6J.pdf" target="_blank" rel="noopener">политикой конфиденциальности</a>.</span>
-      </label>
-      <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <p class="form__error" role="alert" hidden>Не&nbsp;получилось отправить заявку. Попробуйте ещё раз или&nbsp;позвоните нам: <a href="tel:+74950322255">+7&nbsp;(495)&nbsp;032-22-55</a>.</p>
-      <button class="btn btn--pink" type="submit"><span class="btn__label">Подтвердить бронь</span> <span class="btn__dot"><svg width="20" height="20" aria-hidden="true"><use href="#arrow"/></svg></span></button>
-      <div class="form__done" role="status" aria-live="polite">
-        <h3>Бронь подтверждена</h3>
-        <p>До&nbsp;встречи 3 декабря в&nbsp;17:00. Дресс-код&nbsp;— отпускной.</p>
-      </div>
-    </form>
+    <div class="form reply reveal">
+      <h3 class="reply__title">Подтвердить участие</h3>
+      <p class="reply__text">Напишите нам до&nbsp;30&nbsp;ноября&nbsp;— и&nbsp;мы внесём вас в&nbsp;список гостей.</p>
+      <a class="btn btn--pink" href="mailto:info@creon-cg.com?subject=%D0%9F%D0%BE%D0%B4%D1%82%D0%B2%D0%B5%D1%80%D0%B6%D0%B4%D0%B0%D1%8E%20%D1%83%D1%87%D0%B0%D1%81%D1%82%D0%B8%D0%B5%20%E2%80%94%20%C2%AB%D0%9D%D0%B0%D0%B4%D0%BE%20%D0%B1%D1%80%D0%BE%D0%BD%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D1%82%D1%8C%C2%BB%2C%203%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F&amp;body=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21%0A%0A%D0%9F%D0%BE%D0%B4%D1%82%D0%B2%D0%B5%D1%80%D0%B6%D0%B4%D0%B0%D1%8E%20%D1%83%D1%87%D0%B0%D1%81%D1%82%D0%B8%D0%B5%20%D0%B2%20%D0%B2%D0%B5%D1%87%D0%B5%D1%80%D0%B5%20%C2%AB%D0%9D%D0%B0%D0%B4%D0%BE%20%D0%B1%D1%80%D0%BE%D0%BD%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D1%82%D1%8C%C2%BB%203%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F%20%D0%B2%2017%3A00.%0A%0A%D0%98%D0%BC%D1%8F%20%D0%B8%20%D1%84%D0%B0%D0%BC%D0%B8%D0%BB%D0%B8%D1%8F%3A%20%0A%D0%9A%D0%BE%D0%BC%D0%BF%D0%B0%D0%BD%D0%B8%D1%8F%3A%20%0A%D0%A2%D0%B5%D0%BB%D0%B5%D1%84%D0%BE%D0%BD%20%D0%B8%D0%BB%D0%B8%20Telegram%3A%20%0A"><span class="btn__label">Написать нам</span> <span class="btn__dot"><svg width="20" height="20" aria-hidden="true"><use href="#arrow"/></svg></span></a>
+      <p class="reply__alt">Или&nbsp;позвоните: <a href="tel:+74950322255">+7&nbsp;(495)&nbsp;032-22-55</a></p>
+    </div>
   </div>
 </section>
 </main>
@@ -507,44 +492,6 @@ section{position:relative}
     }
   }
 
-  /* форма: заявки уходят в Google Таблицу через веб-приложение Apps Script */
-  var ENDPOINT = ''; // сюда вставляется адрес веб-приложения (https://script.google.com/macros/s/…/exec)
-  var form = document.getElementById('rsvp-form');
-  var submit = form.querySelector('button[type="submit"]');
-  var label = submit.querySelector('.btn__label');
-  var error = form.querySelector('.form__error');
-
-  function done() {
-    form.classList.add('is-done');
-    if (!reduce) {
-      var c = document.createElement('canvas');
-      c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:99';
-      document.body.appendChild(c);
-      new Confetti(c, { ambient: false }).burst(160);
-      setTimeout(function () { c.remove(); }, 6000);
-    }
-  }
-
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!form.checkValidity()) { form.reportValidity(); return; }
-    error.hidden = true;
-    if (!ENDPOINT) {
-      console.warn('Приём заявок не подключён: заявка никуда не отправлена.');
-      done();
-      return;
-    }
-    submit.disabled = true;
-    label.textContent = 'Отправляем…';
-    fetch(ENDPOINT, { method: 'POST', body: new URLSearchParams(new FormData(form)) })
-      .then(function (r) { return r.json(); })
-      .then(function (d) { if (!d || !d.ok) throw new Error('rejected'); done(); })
-      .catch(function () {
-        error.hidden = false;
-        submit.disabled = false;
-        label.textContent = 'Подтвердить бронь';
-      });
-  });
 })();
 </script>
 </body>
