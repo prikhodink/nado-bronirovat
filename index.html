@@ -422,6 +422,7 @@ section{position:relative}
   </div>
 </footer>
 
+<script src="config.js"></script>
 <script>
 (function () {
   document.documentElement.classList.add('js');
@@ -510,7 +511,7 @@ section{position:relative}
   }
 
   /* форма: заявки уходят в Google Таблицу через веб-приложение Apps Script */
-  var ENDPOINT = ''; // сюда вставляется адрес веб-приложения (https://script.google.com/macros/s/…/exec)
+  var ENDPOINT = window.RSVP_ENDPOINT || ''; // адрес задаётся в config.js
   var form = document.getElementById('rsvp-form');
   var submit = form.querySelector('button[type="submit"]');
   var label = submit.querySelector('.btn__label');

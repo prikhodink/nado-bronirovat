@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Заявки — «Надо бронировать»</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1b2ff2">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<style>
+@font-face{font-family:"Dela Gothic One";src:url("../fonts/DelaGothicOne-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Onest";src:url("../fonts/Onest-VariableFont_wght.ttf") format("truetype");font-weight:100 900;font-display:swap}
+:root{--blue:#1b2ff2;--blue-soft:#f0f5ff;--line:#d6e0ff;--ink:#151515;--muted:#5a6072;--hot:#ff4586;--err:#c4124f}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-family:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5;color:var(--ink);background:var(--blue-soft)}
+.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 64px}
+h1{font-family:"Dela Gothic One","Arial Black",sans-serif;font-weight:400;text-transform:uppercase;font-size:clamp(24px,4vw,36px);line-height:1.1;color:var(--blue);margin:0}
+.sub{color:var(--muted);margin:6px 0 0}
+[hidden]{display:none!important}
+button,input{font:inherit}
+.btn{border:0;border-radius:999px;padding:12px 22px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;transition:opacity .2s}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.5;cursor:progress}
+.btn--ghost{background:#fff;color:var(--blue);border:2px solid var(--line)}
+.btn--pink{background:var(--hot)}
+.btn:focus-visible,input:focus-visible{outline:3px solid #8be04e;outline-offset:2px}
+
+.login{max-width:420px;margin:12vh auto 0;background:#fff;border-radius:28px;padding:32px;box-shadow:0 20px 50px rgba(27,47,242,.12)}
+.login label{display:block;font-weight:700;font-size:14px;margin:24px 0 6px}
+.login input{width:100%;padding:13px 16px;border-radius:14px;border:2px solid var(--line);background:var(--blue-soft)}
+.login input:focus{border-color:var(--blue);outline:none}
+.login .btn{width:100%;margin-top:16px}
+.msg{margin:14px 0 0;font-weight:600;font-size:14px;color:var(--err)}
+
+.bar{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:24px}
+.bar__actions{display:flex;flex-wrap:wrap;gap:10px}
+.count{font-family:"Dela Gothic One",sans-serif;color:var(--blue)}
+.card{background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 20px 50px rgba(27,47,242,.08)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{text-align:left;padding:14px 18px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:#fafbff;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.num{color:var(--muted);width:1%;white-space:nowrap}
+td.when{white-space:nowrap;color:var(--muted)}
+.empty{padding:48px 20px;text-align:center;color:var(--muted)}
+.foot{margin-top:16px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- вход -->
+  <form class="login" id="login">
+    <h1>Заявки</h1>
+    <p class="sub">Вечер «Надо бронировать», 3 декабря</p>
+    <label for="password">Пароль</label>
+    <input id="password" type="password" autocomplete="current-password" required autofocus>
+    <button class="btn" type="submit">Войти</button>
+    <p class="msg" id="login-msg" role="alert" hidden></p>
+  </form>
+
+  <!-- список -->
+  <section id="list" hidden>
+    <div class="bar">
+      <div>
+        <h1>Заявки</h1>
+        <p class="sub">Вечер «Надо бронировать», 3 декабря · всего: <span class="count" id="count">0</span></p>
+      </div>
+      <div class="bar__actions">
+        <button class="btn btn--ghost" id="refresh" type="button">Обновить</button>
+        <button class="btn btn--pink" id="export" type="button">Скачать Excel</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="scroll">
+        <table>
+          <thead><tr><th>№</th><th>Дата и время</th><th>Имя и фамилия</th><th>Компания</th><th>Телефон или Telegram</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="empty" hidden>Заявок пока нет.</p>
+    </div>
+    <p class="foot" id="updated"></p>
+    <p class="msg" id="list-msg" role="alert" hidden></p>
+  </section>
+
+</div>
+
+<script src="../config.js"></script>
+<script>
+(function () {
+  var ENDPOINT = window.RSVP_ENDPOINT || '';
+  var HEAD = ['№', 'Дата и время', 'Имя и фамилия', 'Компания', 'Телефон или Telegram', 'Согласие на обработку данных'];
+  var ERRORS = {
+    password: 'Неверный пароль.',
+    nopassword: 'Пароль ещё не задан в скрипте таблицы.',
+    locked: 'Слишком много неверных попыток. Подождите 10 минут.',
+    server: 'Таблица не ответила. Попробуйте ещё раз.',
+    network: 'Не получилось связаться с таблицей. Проверьте интернет и попробуйте ещё раз.',
+    off: 'Приём заявок ещё не подключён: не указан адрес таблицы.'
+  };
+  var $ = function (id) { return document.getElementById(id); };
+  var password = '';   // хранится только в памяти вкладки
+  var data = [];
+
+  function show(el, text) { el.textContent = text; el.hidden = false; }
+
+  function load(pass) {
+    if (!ENDPOINT) return Promise.reject(new Error('off'));
+    return fetch(ENDPOINT, { method: 'POST', body: new URLSearchParams({ action: 'list', password: pass }) })
+      .then(function (r) { return r.json(); }, function () { throw new Error('network'); })
+      .then(function (d) {
+        if (!d || !d.ok) throw new Error((d && d.error) || 'server');
+        return d.rows || [];
+      });
+  }
+
+  function render(rows) {
+    data = rows;
+    var body = $('rows');
+    body.textContent = '';
+    rows.forEach(function (r, i) {
+      var tr = document.createElement('tr');
+      [String(i + 1), r[0], r[1], r[2], r[3]].forEach(function (v, c) {
+        var td = document.createElement('td');
+        td.textContent = v || (c === 3 ? '—' : '');
+        if (c === 0) td.className = 'num';
+        if (c === 1) td.className = 'when';
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    });
+    $('count').textContent = rows.length;
+    $('empty').hidden = rows.length > 0;
+    $('updated').textContent = 'Обновлено: ' + new Date().toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  function fail(el, err) { show(el, ERRORS[err.message] || ERRORS.server); }
+
+  $('login').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = this.querySelector('button'), pass = $('password').value;
+    $('login-msg').hidden = true;
+    btn.disabled = true;
+    load(pass).then(function (rows) {
+      password = pass;
+      $('password').value = '';
+      $('login').hidden = true;
+      $('list').hidden = false;
+      render(rows);
+    }).catch(function (err) { fail($('login-msg'), err); })
+      .then(function () { btn.disabled = false; });
+  });
+
+  $('refresh').addEventListener('click', function () {
+    var btn = this;
+    $('list-msg').hidden = true;
+    btn.disabled = true;
+    load(password).then(render).catch(function (err) { fail($('list-msg'), err); })
+      .then(function () { btn.disabled = false; });
+  });
+
+  $('export').addEventListener('click', function () {
+    var rows = [HEAD].concat(data.map(function (r, i) { return [String(i + 1), r[0], r[1], r[2], r[3], r[4]]; }));
+    var blob = new Blob([xlsx(rows)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var a = document.createElement('a');
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    a.href = URL.createObjectURL(blob);
+    a.download = 'zayavki-nado-bronirovat-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  /* ---------- минимальный генератор .xlsx (без сторонних библиотек) ---------- */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function col(i) { return String.fromCharCode(65 + i); }
+
+  function xlsx(rows) {
+    var widths = [6, 18, 30, 28, 26, 16];
+    var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+      '<cols>' + widths.map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>' +
+      '<sheetData>' + rows.map(function (r, ri) {
+        return '<row r="' + (ri + 1) + '">' + r.map(function (v, ci) {
+          return '<c r="' + col(ci) + (ri + 1) + '" t="inlineStr"' + (ri === 0 ? ' s="1"' : '') + '><is><t xml:space="preserve">' + esc(v) + '</t></is></c>';
+        }).join('') + '</row>';
+      }).join('') + '</sheetData></worksheet>';
+
+    var files = [
+      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Заявки" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs></styleSheet>'],
+      ['xl/worksheets/sheet1.xml', sheet]
+    ];
+    return zip(files);
+  }
+
+  var CRC = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+    return t;
+  })();
+  function crc32(b) { var c = 0xFFFFFFFF; for (var i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+
+  // zip без сжатия: для таблицы на сотни строк этого достаточно
+  function zip(files) {
+    var enc = new TextEncoder(), parts = [], central = [], offset = 0;
+    files.forEach(function (f) {
+      var name = enc.encode(f[0]), body = enc.encode(f[1]), crc = crc32(body);
+      var local = new DataView(new ArrayBuffer(30));
+      local.setUint32(0, 0x04034b50, true); local.setUint16(4, 20, true); local.setUint16(6, 0x0800, true);
+      local.setUint16(8, 0, true); local.setUint16(10, 0, true); local.setUint16(12, 0x21, true);
+      local.setUint32(14, crc, true); local.setUint32(18, body.length, true); local.setUint32(22, body.length, true);
+      local.setUint16(26, name.length, true); local.setUint16(28, 0, true);
+      parts.push(new Uint8Array(local.buffer), name, body);
+
+      var cd = new DataView(new ArrayBuffer(46));
+      cd.setUint32(0, 0x02014b50, true); cd.setUint16(4, 20, true); cd.setUint16(6, 20, true); cd.setUint16(8, 0x0800, true);
+      cd.setUint16(10, 0, true); cd.setUint16(12, 0, true); cd.setUint16(14, 0x21, true);
+      cd.setUint32(16, crc, true); cd.setUint32(20, body.length, true); cd.setUint32(24, body.length, true);
+      cd.setUint16(28, name.length, true); cd.setUint32(42, offset, true);
+      central.push(new Uint8Array(cd.buffer), name);
+      offset += 30 + name.length + body.length;
+    });
+    var cdSize = central.reduce(function (s, p) { return s + p.length; }, 0);
+    var end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+    end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+    return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]));
+  }
+
+  if (!ENDPOINT) show($('login-msg'), ERRORS.off);
+})();
+</script>
+</body>
+</html>
