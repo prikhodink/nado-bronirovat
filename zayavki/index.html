@@ -82,6 +82,7 @@ td.when{white-space:nowrap;color:var(--muted)}
       <p class="empty" id="empty" hidden>Заявок пока нет.</p>
     </div>
     <p class="foot" id="updated"></p>
+    <p class="foot" id="dupes" hidden></p>
     <p class="msg" id="list-msg" role="alert" hidden></p>
   </section>
 
@@ -133,8 +134,29 @@ td.when{white-space:nowrap;color:var(--muted)}
       });
   }
 
-  function render(rows) {
+  // Если ответ таблицы потерялся по дороге, форма отправляет заявку повторно и в таблице появляются
+  // одинаковые строки. Здесь они скрываются: тот же человек, компания и контакт в пределах 10 минут.
+  function stamp(v) {
+    var m = /^(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/.exec(v || '');
+    return m ? Date.UTC(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]) : NaN;
+  }
+  function norm(v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  function dedupe(rows) {
+    var last = {}, out = [];
+    rows.forEach(function (r) {
+      var key = norm(r[1]) + '|' + norm(r[2]) + '|' + norm(r[3]), t = stamp(r[0]);
+      if (key in last && Math.abs(t - last[key]) <= 600000) return;
+      last[key] = t;
+      out.push(r);
+    });
+    return out;
+  }
+
+  function render(all) {
+    var rows = dedupe(all);
     data = rows;
+    $('dupes').hidden = all.length === rows.length;
+    $('dupes').textContent = 'Скрыто повторных отправок: ' + (all.length - rows.length) + '.';
     var body = $('rows');
     body.textContent = '';
     rows.forEach(function (r, i) {

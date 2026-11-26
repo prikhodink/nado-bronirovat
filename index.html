@@ -528,11 +528,11 @@ section{position:relative}
     }
   }
 
-  // Связь с Google из России бывает нестабильной: пробуем до трёх раз, каждая попытка не дольше 12 секунд.
+  // Связь с Google из России бывает нестабильной: пробуем до трёх раз, каждая попытка не дольше 25 секунд.
   // Повторяем только сбои связи; если таблица ответила отказом, повтор не поможет.
   function send(body, attempt) {
     var ctrl = window.AbortController ? new AbortController() : null;
-    var timer = ctrl && setTimeout(function () { ctrl.abort(); }, 12000);
+    var timer = ctrl && setTimeout(function () { ctrl.abort(); }, 25000);
     return fetch(ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
