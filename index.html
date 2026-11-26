@@ -528,6 +528,28 @@ section{position:relative}
     }
   }
 
+  // Связь с Google из России бывает нестабильной: пробуем до трёх раз, каждая попытка не дольше 12 секунд.
+  // Повторяем только сбои связи; если таблица ответила отказом, повтор не поможет.
+  function send(body, attempt) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl && setTimeout(function () { ctrl.abort(); }, 12000);
+    return fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: body,
+      signal: ctrl ? ctrl.signal : undefined
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        clearTimeout(timer);
+        if (!d || !d.ok) { var e = new Error('rejected'); e.final = true; throw e; }
+      }, function (err) {
+        clearTimeout(timer);
+        if (attempt >= 3) throw err;
+        return new Promise(function (res) { setTimeout(res, 800); }).then(function () { return send(body, attempt + 1); });
+      });
+  }
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (!form.checkValidity()) { form.reportValidity(); return; }
@@ -539,9 +561,9 @@ section{position:relative}
     }
     submit.disabled = true;
     label.textContent = 'Отправляем…';
-    fetch(ENDPOINT, { method: 'POST', body: new URLSearchParams(new FormData(form)) })
-      .then(function (r) { return r.json(); })
-      .then(function (d) { if (!d || !d.ok) throw new Error('rejected'); done(); })
+    var body = new URLSearchParams(new FormData(form)).toString();
+    send(body, 1)
+      .then(done)
       .catch(function () {
         error.hidden = false;
         submit.disabled = false;

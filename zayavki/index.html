@@ -106,10 +106,27 @@ td.when{white-space:nowrap;color:var(--muted)}
 
   function show(el, text) { el.textContent = text; el.hidden = false; }
 
+  // Связь с Google бывает нестабильной: при сбое соединения пробуем до трёх раз, каждая попытка не дольше 15 секунд.
+  function request(body, attempt) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl && setTimeout(function () { ctrl.abort(); }, 15000);
+    return fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: body,
+      signal: ctrl ? ctrl.signal : undefined
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { clearTimeout(timer); return d; }, function () {
+        clearTimeout(timer);
+        if (attempt >= 3) throw new Error('network');
+        return new Promise(function (res) { setTimeout(res, 800); }).then(function () { return request(body, attempt + 1); });
+      });
+  }
+
   function load(pass) {
     if (!ENDPOINT) return Promise.reject(new Error('off'));
-    return fetch(ENDPOINT, { method: 'POST', body: new URLSearchParams({ action: 'list', password: pass }) })
-      .then(function (r) { return r.json(); }, function () { throw new Error('network'); })
+    return request(new URLSearchParams({ action: 'list', password: pass }).toString(), 1)
       .then(function (d) {
         if (!d || !d.ok) throw new Error((d && d.error) || 'server');
         return d.rows || [];
